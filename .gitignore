@@ -1,0 +1,16 @@
+.env
+*.db
+*.db-shm
+*.db-wal
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+logs/
+assets/covers/*.jpg
+assets/covers/*.png
+assets/covers/*.webp
+.venv/
+venv/
+.DS_Store

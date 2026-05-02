@@ -4,8 +4,151 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Velvet Archive</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--gold:#b8872a;--gold-dim:rgba(184,135,42,0.12);--gold-border:rgba(184,135,42,0.25);--bg:#08080f;--surface:#0e0e18;--surface2:#13131f;--border:#1a1a2a;--text:#e8dcc8;--text-dim:#4a3f28;--text-mid:#7a6a4a}
+html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+.app{max-width:420px;margin:0 auto;padding:20px 16px 40px;min-height:100vh;display:flex;flex-direction:column}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.logo{font-size:10px;letter-spacing:4px;color:var(--text-dim);text-transform:uppercase}
+.mood-pill{font-size:9px;letter-spacing:1.5px;color:var(--gold);background:var(--gold-dim);border:0.5px solid var(--gold-border);padding:4px 12px;border-radius:20px;text-transform:uppercase;transition:all 0.3s}
+.turntable-wrap{display:flex;justify-content:center;margin-bottom:32px;position:relative}
+.platter{width:220px;height:220px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative}
+.vinyl{width:188px;height:188px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;animation:spin 4s linear infinite;animation-play-state:paused}
+.vinyl.playing{animation-play-state:running}
+@keyframes spin{to{transform:rotate(360deg)}}
+.vinyl-rings{position:absolute;width:100%;height:100%;border-radius:50%}
+.center-label{width:60px;height:60px;border-radius:50%;background:#110e06;border:1px solid var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2;position:relative}
+.center-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);margin-bottom:3px}
+.center-word{font-size:7px;color:var(--gold);letter-spacing:1.5px;text-align:center;text-transform:uppercase}
+.arm-wrap{position:absolute;top:10px;right:10px;width:90px;height:90px;transform-origin:80px 12px;transform:rotate(-28deg);transition:transform 1s cubic-bezier(0.4,0,0.2,1)}
+.arm-wrap.playing{transform:rotate(0deg)}
+.song-info{text-align:center;margin-bottom:20px}
+.song-title{font-size:20px;font-weight:500;color:var(--text);margin-bottom:6px;letter-spacing:0.3px}
+.song-artist{font-size:11px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase}
+.song-album{font-size:11px;color:var(--text-dim);margin-top:4px;opacity:0.6}
+.waveform{display:flex;align-items:center;justify-content:center;gap:2px;height:32px;margin-bottom:20px;padding:0 8px}
+.wbar{width:2px;border-radius:2px;background:var(--gold);opacity:0.2;transition:opacity 0.2s}
+.wbar.live{opacity:0.9;animation:pulse 0.7s ease-in-out infinite alternate}
+@keyframes pulse{from{transform:scaleY(0.25)}to{transform:scaleY(1)}}
+.progress-wrap{margin-bottom:24px}
+.progress-track{width:100%;height:2px;background:var(--border);border-radius:2px;cursor:pointer;margin-bottom:8px;position:relative}
+.progress-fill{height:100%;background:var(--gold);border-radius:2px;width:0%;transition:width 0.1s linear}
+.time-row{display:flex;justify-content:space-between}
+.time{font-size:10px;color:var(--text-dim);font-family:'SF Mono','Courier New',monospace;letter-spacing:1px}
+.controls{display:flex;align-items:center;justify-content:center;gap:28px;margin-bottom:28px}
+.ctrl{background:none;border:none;cursor:pointer;color:var(--text-dim);padding:10px;border-radius:50%;transition:color 0.2s,background 0.2s;display:flex;align-items:center;justify-content:center}
+.ctrl:hover{color:var(--gold);background:var(--gold-dim)}
+.play-ring{width:60px;height:60px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s,transform 0.1s;color:var(--bg)}
+.play-ring:hover{background:#d09530}
+.play-ring:active{transform:scale(0.94)}
+.moods{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:28px}
+.mtag{font-size:9px;color:var(--text-dim);border:0.5px solid var(--border);padding:4px 10px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s}
+.mtag.on{color:var(--gold);border-color:var(--gold-border);background:var(--gold-dim)}
+.queue-section{flex:1}
+.section-label{font-size:9px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;margin-bottom:14px;padding-bottom:10px;border-bottom:0.5px solid var(--border)}
+.queue-item{display:flex;align-items:center;padding:10px 8px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background 0.15s;border-radius:6px;gap:12px}
+.queue-item:hover{background:var(--surface2)}
+.queue-item.current{background:var(--gold-dim)}
+.q-num{font-size:11px;color:var(--text-dim);width:18px;text-align:center;font-family:monospace;flex-shrink:0}
+.q-num.pi{color:var(--gold)}
+.q-info{flex:1;min-width:0}
+.q-title{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.queue-item.current .q-title{color:var(--gold)}
+.q-artist{font-size:10px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
+.q-dur{font-size:10px;color:var(--text-dim);font-family:monospace;flex-shrink:0}
+.bottom-bar{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:20px;border-top:0.5px solid var(--border)}
+.fav-btn{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-dim);transition:color 0.2s,transform 0.15s;padding:4px}
+.fav-btn.on{color:var(--gold)}
+.fav-btn:active{transform:scale(1.3)}
+.action-btn{font-size:10px;color:var(--text-dim);background:none;border:0.5px solid var(--border);padding:7px 14px;border-radius:20px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.2s}
+.action-btn:hover{color:var(--gold);border-color:var(--gold-border);background:var(--gold-dim)}
+</style>
 </head>
-<body style="background:#08080f;color:#e8dcc8;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
-<h1 style="letter-spacing:4px;font-size:14px;opacity:0.5;">VELVET ARCHIVE — PLAYER COMING SOON</h1>
+<body>
+<div class="app">
+<div class="header">
+<span class="logo">Velvet Archive</span>
+<span class="mood-pill" id="moodPill">Night Drive</span>
+</div>
+<div class="turntable-wrap">
+<div class="platter">
+<div class="vinyl" id="vinyl">
+<svg class="vinyl-rings" viewBox="0 0 188 188">
+<circle cx="94" cy="94" r="93" fill="#0c0c14" stroke="#181828" stroke-width="0.5"/>
+<circle cx="94" cy="94" r="88" fill="none" stroke="#141422" stroke-width="1"/>
+<circle cx="94" cy="94" r="80" fill="none" stroke="#131321" stroke-width="0.5"/>
+<circle cx="94" cy="94" r="72" fill="none" stroke="#141422" stroke-width="1"/>
+<circle cx="94" cy="94" r="64" fill="none" stroke="#131321" stroke-width="0.5"/>
+<circle cx="94" cy="94" r="56" fill="none" stroke="#141422" stroke-width="1"/>
+<circle cx="94" cy="94" r="48" fill="none" stroke="#131321" stroke-width="0.5"/>
+<circle cx="94" cy="94" r="40" fill="none" stroke="#181828" stroke-width="0.5"/>
+<circle cx="94" cy="94" r="33" fill="#100e08" stroke="#b8872a" stroke-width="0.5"/>
+</svg>
+<div class="center-label"><div class="center-dot"></div><div class="center-word">velvet</div></div>
+</div>
+<svg class="arm-wrap" id="arm" viewBox="0 0 90 90" fill="none">
+<circle cx="80" cy="12" r="7" fill="#16162a" stroke="#b8872a" stroke-width="0.5"/>
+<circle cx="80" cy="12" r="2.5" fill="#b8872a"/>
+<line x1="80" y1="19" x2="22" y2="76" stroke="#b8872a" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+<circle cx="20" cy="78" r="5" fill="#b8872a" opacity="0.85"/>
+<line x1="15" y1="78" x2="10" y2="84" stroke="#b8872a" stroke-width="1" opacity="0.5"/>
+<circle cx="9" cy="85" r="2.5" fill="#b8872a" opacity="0.5"/>
+</svg>
+</div>
+</div>
+<div class="song-info">
+<div class="song-title" id="songTitle">Neon Rain</div>
+<div class="song-artist" id="songArtist">Corridor Echo</div>
+<div class="song-album" id="songAlbum">Midnight Objects</div>
+</div>
+<div class="waveform" id="waveform"></div>
+<div class="progress-wrap">
+<div class="progress-track" id="track"><div class="progress-fill" id="fill"></div></div>
+<div class="time-row"><span class="time" id="cur">0:00</span><span class="time" id="dur">3:42</span></div>
+</div>
+<div class="controls">
+<button class="ctrl" id="prevBtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polygon points="19,20 9,12 19,4"/><line x1="5" y1="4" x2="5" y2="20"/></svg></button>
+<button class="play-ring" id="playBtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" id="playIco"><polygon points="5,3 19,12 5,21"/></svg></button>
+<button class="ctrl" id="nextBtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polygon points="5,4 15,12 5,20"/><line x1="19" y1="4" x2="19" y2="20"/></svg></button>
+</div>
+<div class="moods" id="moods"></div>
+<div class="queue-section">
+<div class="section-label">Up next</div>
+<div id="queue"></div>
+</div>
+<div class="bottom-bar">
+<button class="fav-btn" id="favBtn">&#9825;</button>
+<button class="action-btn" id="moreBtn">More like this</button>
+</div>
+</div>
+<script>
+const tg=window.Telegram&&window.Telegram.WebApp;
+if(tg){tg.ready();tg.expand();}
+const SONGS=[
+{title:"Neon Rain",artist:"Corridor Echo",album:"Midnight Objects",mood:"Night Drive",dur:222,moods:["night drive","rain","city"]},
+{title:"Dust & Frequency",artist:"Al-Mutanabbi St.",album:"Baghdad Tapes",mood:"Baghdad Core",dur:198,moods:["baghdad core","nostalgia","memory"]},
+{title:"Sakura Static",artist:"Kira Yamabuki",album:"Train Window",mood:"Old Japan",dur:251,moods:["old japan","dreamy","soft"]},
+{title:"Glass Towers",artist:"Solitude FM",album:"No Signal",mood:"Lonely City",dur:187,moods:["lonely city","midnight","silence"]},
+{title:"Worn Cassette",artist:"VHS Memory",album:"1987",mood:"Nostalgia",dur:214,moods:["nostalgia","retro","warm"]},
+];
+let cur=0,playing=false,elapsed=0,ticker=null,faved=false;
+const vinyl=document.getElementById('vinyl'),arm=document.getElementById('arm'),playBtn=document.getElementById('playBtn'),playIco=document.getElementById('playIco'),songTitle=document.getElementById('songTitle'),songArtist=document.getElementById('songArtist'),songAlbum=document.getElementById('songAlbum'),moodPill=document.getElementById('moodPill'),fill=document.getElementById('fill'),curEl=document.getElementById('cur'),durEl=document.getElementById('dur'),waveform=document.getElementById('waveform'),moodsEl=document.getElementById('moods'),queueEl=document.getElementById('queue'),favBtn=document.getElementById('favBtn');
+function fmt(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function buildWave(){waveform.innerHTML='';[4,7,11,16,20,24,20,16,12,16,20,24,28,24,20,16,12,16,22,16,11,7,5,9,14,18,22,18,14,9].forEach((v,i)=>{const b=document.createElement('div');b.className='wbar'+(playing?' live':'');b.style.height=v+'px';if(playing)b.style.animationDelay=(i*0.04)+'s';waveform.appendChild(b);});}
+function buildMoods(){moodsEl.innerHTML='';SONGS[cur].moods.forEach(m=>{const t=document.createElement('div');t.className='mtag on';t.textContent=m;moodsEl.appendChild(t);});}
+function buildQueue(){queueEl.innerHTML='';SONGS.forEach((s,i)=>{const item=document.createElement('div');item.className='queue-item'+(i===cur?' current':'');item.innerHTML=`<div class="q-num ${i===cur&&playing?'pi':''}">${i===cur&&playing?'&#9658;':i+1}</div><div class="q-info"><div class="q-title">${s.title}</div><div class="q-artist">${s.artist}</div></div><div class="q-dur">${fmt(s.dur)}</div>`;item.onclick=()=>{loadSong(i);if(!playing)togglePlay();};queueEl.appendChild(item);});}
+function loadSong(idx){cur=idx;const s=SONGS[cur];songTitle.textContent=s.title;songArtist.textContent=s.artist;songAlbum.textContent=s.album;moodPill.textContent=s.mood;durEl.textContent=fmt(s.dur);elapsed=0;fill.style.width='0%';curEl.textContent='0:00';buildMoods();buildWave();buildQueue();}
+function tick(){const s=SONGS[cur];elapsed+=0.1;if(elapsed>=s.dur){elapsed=0;loadSong((cur+1)%SONGS.length);return;}fill.style.width=((elapsed/s.dur)*100).toFixed(2)+'%';curEl.textContent=fmt(elapsed);}
+function togglePlay(){playing=!playing;vinyl.classList.toggle('playing',playing);arm.classList.toggle('playing',playing);playIco.innerHTML=playing?'<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>':'<polygon points="5,3 19,12 5,21"/>';if(playing){ticker=setInterval(tick,100);}else{clearInterval(ticker);}buildWave();buildQueue();}
+playBtn.onclick=togglePlay;
+document.getElementById('prevBtn').onclick=()=>{clearInterval(ticker);playing=false;loadSong((cur-1+SONGS.length)%SONGS.length);};
+document.getElementById('nextBtn').onclick=()=>{clearInterval(ticker);playing=false;loadSong((cur+1)%SONGS.length);};
+document.getElementById('track').onclick=e=>{const r=e.currentTarget.getBoundingClientRect();elapsed=((e.clientX-r.left)/r.width)*SONGS[cur].dur;fill.style.width=((elapsed/SONGS[cur].dur)*100).toFixed(2)+'%';curEl.textContent=fmt(elapsed);};
+favBtn.onclick=()=>{faved=!faved;favBtn.textContent=faved?'&#9829;':'&#9825;';favBtn.classList.toggle('on',faved);};
+document.getElementById('moreBtn').onclick=()=>{if(tg)tg.sendData(JSON.stringify({action:'similar',song:SONGS[cur].title}));};
+loadSong(0);
+</script>
 </body>
 </html>

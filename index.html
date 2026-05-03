@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Velvet Archive</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--gold:#b8872a;--gold-dim:rgba(184,135,42,0.12);--gold-border:rgba(184,135,42,0.25);--bg:#08080f;--surface:#0e0e18;--surface2:#13131f;--border:#1a1a2a;--text:#e8dcc8;--text-dim:#4a3f28;--text-mid:#7a6a4a}
@@ -124,8 +124,8 @@ html,body{background:var(--bg);color:var(--text);font-family:-apple-system,Blink
 </div>
 </div>
 <script>
-const tg=window.Telegram&&window.Telegram.WebApp;
-if(tg){tg.ready();tg.expand();}
+const tg=null;
+
 const SONGS=[
 {title:"Neon Rain",artist:"Corridor Echo",album:"Midnight Objects",mood:"Night Drive",dur:222,moods:["night drive","rain","city"]},
 {title:"Dust & Frequency",artist:"Al-Mutanabbi St.",album:"Baghdad Tapes",mood:"Baghdad Core",dur:198,moods:["baghdad core","nostalgia","memory"]},
